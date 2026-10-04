@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>floorplan-card demo</title>
+<style>
+  :root, body.dark {
+    --primary-color: #4caf50;
+    --primary-text-color: #e1e1e1;
+    --secondary-text-color: #9b9b9b;
+    --card-background-color: #1c1c1c;
+    --divider-color: #333;
+    --state-icon-active-color: #fdd835;
+    --state-icon-color: #9b9b9b;
+    --rgb-primary-text-color: 225, 225, 225;
+    --red-color: #f44336;
+    --amber-color: #ffc107;
+    --green-color: #4caf50;
+    --blue-color: #2196f3;
+    --page-background: #111418;
+  }
+  body.light {
+    --primary-text-color: #212121;
+    --secondary-text-color: #727272;
+    --card-background-color: #fff;
+    --divider-color: #e0e0e0;
+    --state-icon-active-color: #fdd835;
+    --state-icon-color: #44739e;
+    --rgb-primary-text-color: 33, 33, 33;
+    --page-background: #f2f4f7;
+  }
+  body {
+    margin: 0;
+    padding: 24px;
+    background: var(--page-background);
+    color: var(--primary-text-color);
+    font-family: Roboto, system-ui, sans-serif;
+  }
+  .layout { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+  .layout > * { min-width: 0; max-width: 100%; }
+  #cards { display: flex; flex-direction: column; gap: 14px; width: 620px; max-width: 100%; }
+  h1 { font-size: 15px; font-weight: 500; margin: 0 0 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--secondary-text-color); }
+  aside { width: 300px; font-size: 13px; }
+  .panel { background: var(--card-background-color); border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; }
+  .panel h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--secondary-text-color); margin: 0 0 8px; }
+  button {
+    font: inherit; font-size: 12px; padding: 5px 9px; margin: 0 4px 4px 0;
+    border: 1px solid var(--divider-color); border-radius: 999px;
+    background: transparent; color: var(--primary-text-color); cursor: pointer;
+  }
+  button:hover { border-color: var(--primary-color); color: var(--primary-color); }
+  #log { font-family: ui-monospace, monospace; font-size: 11px; line-height: 1.6; max-height: 220px; overflow: auto; color: var(--secondary-text-color); }
+  #log div:first-child { color: var(--primary-text-color); }
+</style>
+</head>
+<body class="dark">
+<div class="layout">
+  <div>
+    <h1>Floorplan Card &nbsp;·&nbsp; <a href="./editor.html" style="color:var(--primary-color)">visual editor →</a></h1>
+    <div id="cards"></div>
+  </div>
+  <aside>
+    <div class="panel">
+      <h2>Trigger states</h2>
+      <div id="controls"></div>
+    </div>
+    <div class="panel">
+      <h2>Event log</h2>
+      <div id="log"></div>
+    </div>
+  </aside>
+</div>
+
+<script src="./mdi-icons.js"></script>
+<script src="./mock-ha.js"></script>
+<script type="module" src="../dist/floorplan-card.js"></script>
+<script type="module">
+const { hass, floorImages, onUpdate, toggle, setState, startJitter } = window.MockHA;
+
+const CONFIGS = [
+  {
+    type: "custom:floorplan-card-next",
+    title: "My home",
+    floors: [
+      {
+        id: "eg",
+        name: "Ground floor",
+        image: floorImages.eg,
+        width: 545,
+        height: 725,
+        entities: [
+          { entity: "light.kitchen", x: 136, y: 100, size: 36, tap_action: { action: "toggle" } },
+          { entity: "light.dining", x: 399, y: 100, size: 36, tap_action: { action: "toggle" } },
+          { entity: "light.livingroom", x: 106, y: 315, size: 36, tap_action: { action: "toggle" } },
+          { entity: "switch.plug_media", x: 371, y: 315, size: 30, tap_action: { action: "toggle" } },
+{
+            entity: "sensor.temprature_kitchen",
+            type: "text", x: 136, y: 185, size: 16,
+            background: "rgba(0,0,0,.55)",
+          },
+          {
+            x: 20, y: 690, size: 14,
+            entries: [
+              { entity: "sensor.humidity_garage", background: "#35619f" },
+              { entity: "sensor.temprature_garage", background: "#8c1f1f" },
+            ],
+          },
+          {
+            entity: "sensor.humidity_kitchen",
+            type: "text", x: 136, y: 185, size: 16,
+            background: "rgba(0,0,0,.55)",
+          },
+          {
+            entity: "sensor.temprature_livingroom",
+            type: "text", x: 106, y: 360, size: 16,
+            background: "rgba(0,0,0,.55)",
+            color: [
+              { when: [{ condition: "numeric_state", entity: "sensor.temprature_livingroom", above: 26 }], color: "red" },
+            ],
+          },
+          { entity: "binary_sensor.window_kitchen", x: 250, y: 70, size: 26, tap_action: { action: "more-info" } },
+          {
+            entity: "binary_sensor.window_livingroom",
+            x: 192, y: 214, size: 26,
+            color: [{ active: true, color: "amber" }],
+            show_state: true,
+          },
+          { entity: "binary_sensor.door_garage", x: 20, y: 640, size: 26 },
+          { entity: "camera.katzenblick", x: 80, y: 430, size: 26, state_color: true },
+        ],
+      },
+      {
+        id: "og",
+        name: "Upper floor",
+        image: floorImages.og,
+        width: 545,
+        height: 725,
+        entities: [
+          { entity: "light.bedroom", x: 136, y: 166, size: 36, tap_action: { action: "toggle" } },
+          { entity: "light.bathroom", x: 399, y: 116, size: 36, tap_action: { action: "toggle" } },
+          { entity: "light.office", x: 399, y: 337, size: 36, tap_action: { action: "toggle" } },
+          {
+            x: 136, y: 105, size: 16,
+            entries: [
+              { entity: "sensor.humidity_bedroom", background: "#35619f" },
+              { entity: "sensor.temprature_bedroom", background: "#8c1f1f" },
+            ],
+          },
+          {
+            entity: "sensor.temprature_office",
+            type: "text", x: 399, y: 420, size: 16, background: "rgba(0,0,0,.55)",
+          },
+          { entity: "binary_sensor.window_bedroom", x: 24, y: 26, size: 26 },
+          { entity: "binary_sensor.window_bathroom", x: 522, y: 88, size: 26, color: [{ active: true, color: "amber" }] },
+        ],
+      },
+    ],
+  },
+  {
+    // A single-floor card: the selector stays hidden, positions as percent.
+    type: "custom:floorplan-card-next",
+    coords: "percent",
+    height: 420,
+    floors: [
+      {
+        id: "only",
+        name: "Ground floor",
+        image: floorImages.eg,
+        width: 545,
+        height: 725,
+        entities: [
+          { entity: "light.kitchen", x: 25, y: 14, size: 34, tap_action: { action: "toggle" } },
+          { entity: "binary_sensor.door_garage", x: 4, y: 88, size: 26 },
+        ],
+      },
+    ],
+  },
+];
+
+const cards = CONFIGS.map((config) => {
+  const el = document.createElement("floorplan-card-next");
+  el.setConfig(config);
+  document.getElementById("cards").appendChild(el);
+  return el;
+});
+onUpdate((next) => cards.forEach((card) => (card.hass = next)));
+
+/* ------------------------------------------------------------- controls */
+
+const CONTROLS = [
+  ["Küchenlicht", () => toggle("light.kitchen")],
+  ["Esszimmerlampe", () => toggle("light.dining")],
+  ["Wohnzimmerlampe", () => toggle("light.livingroom")],
+  ["Mediensteckdose", () => toggle("switch.plug_media")],
+  ["Schlafzimmerlampe", () => toggle("light.bedroom")],
+  ["Badlampe", () => toggle("light.bathroom")],
+  ["Bürolampe", () => toggle("light.office")],
+  ["Fenster Wohnzimmer", () => toggle("binary_sensor.window_livingroom")],
+  ["Fenster Bad", () => toggle("binary_sensor.window_bathroom")],
+  ["Garagentor", () => toggle("binary_sensor.door_garage")],
+  ["Jitter an/aus", (btn) => {
+    if (window._jitter) { clearInterval(window._jitter); window._jitter = null; btn.textContent = "Jitter an/aus"; }
+    else { window._jitter = startJitter(1500); btn.textContent = "Jitter läuft…"; }
+  }],
+  ["Hell / Dunkel", () => {
+    document.body.classList.toggle("light");
+    document.body.classList.toggle("dark");
+  }],
+];
+
+const controls = document.getElementById("controls");
+for (const [label, fn] of CONTROLS) {
+  const btn = document.createElement("button");
+  btn.textContent = label;
+  btn.onclick = () => fn(btn);
+  controls.appendChild(btn);
+}
+
+const logEl = document.getElementById("log");
+document.addEventListener("mock-log", (e) => {
+  const line = document.createElement("div");
+  line.textContent = `${new Date().toLocaleTimeString()}  ${e.detail}`;
+  logEl.prepend(line);
+});
+</script>
+</body>
+</html>

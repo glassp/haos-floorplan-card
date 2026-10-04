@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>floorplan-card visual editor demo</title>
+<style>
+  :root, body.dark {
+    --primary-color: #4caf50;
+    --primary-text-color: #e1e1e1;
+    --secondary-text-color: #9b9b9b;
+    --card-background-color: #1c1c1c;
+    --secondary-background-color: #232323;
+    --divider-color: #383838;
+    --state-icon-active-color: #fdd835;
+    --state-icon-color: #9b9b9b;
+    --rgb-primary-text-color: 225, 225, 225;
+    --red-color: #f44336;
+    --amber-color: #ffc107;
+    --green-color: #4caf50;
+    --blue-color: #2196f3;
+    --error-color: #e5534b;
+    --page-background: #111418;
+  }
+  body {
+    margin: 0;
+    padding: 24px;
+    background: var(--page-background);
+    color: var(--primary-text-color);
+    font-family: Roboto, system-ui, sans-serif;
+  }
+  nav { font-size: 13px; margin-bottom: 16px; }
+  nav a { color: var(--primary-color); }
+  h1 { font-size: 12px; font-weight: 500; margin: 0 0 8px; letter-spacing: .06em;
+       text-transform: uppercase; color: var(--secondary-text-color); }
+  .panel { background: var(--card-background-color); border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+  pre {
+    margin: 0; font-family: ui-monospace, monospace; font-size: 11.5px; line-height: 1.5;
+    color: var(--secondary-text-color); white-space: pre-wrap; word-break: break-word;
+    max-height: 460px; overflow: auto;
+  }
+  .hint { font-size: 12px; color: var(--secondary-text-color); margin: 0 0 8px; }
+</style>
+</head>
+<body class="dark">
+<nav><a href="./index.html">← card demo</a></nav>
+<h1>Visual editor</h1>
+<p class="hint">Add entities with "+ Entity", then use "Edit layout" to drag them into place on a
+full-size plan. Swap the background image with "Upload image" — in a real Home Assistant that stores
+the image in HA's own image store (fresh URL every time, so the browser cache can never serve a stale
+floorplan).</p>
+<div class="panel"><div id="editor"></div></div>
+
+<div class="layout" style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
+  <div style="flex:1 1 420px;min-width:0">
+    <h1>Live preview</h1>
+    <div class="panel"><div id="preview"></div></div>
+  </div>
+  <div style="flex:1 1 420px;min-width:0">
+    <h1>Emitted YAML</h1>
+    <div class="panel"><pre id="yaml"></pre></div>
+  </div>
+</div>
+
+<script src="./vendor/js-yaml.umd.min.js"></script>
+<script src="./mdi-icons.js"></script>
+<script src="./mock-ha.js"></script>
+<script type="module" src="../dist/floorplan-card.js"></script>
+<script type="module">
+const { hass, floorImages, onUpdate } = window.MockHA;
+
+let config = {
+  type: "custom:floorplan-card-next",
+  title: "My home",
+  floors: [
+    {
+      id: "eg",
+      name: "Ground floor",
+      image: floorImages.eg,
+      width: 545,
+      height: 725,
+      entities: [
+        { entity: "light.kitchen", x: 136, y: 100, size: 36, tap_action: { action: "toggle" } },
+        { entity: "light.livingroom", x: 106, y: 315, size: 36, tap_action: { action: "toggle" } },
+        { entity: "binary_sensor.window_kitchen", x: 250, y: 70, size: 26 },
+        { entity: "camera.katzenblick", x: 80, y: 430, size: 26 },
+        {
+          entity: "sensor.temprature_kitchen",
+          type: "text", x: 136, y: 150, size: 16, background: "rgba(0,0,0,.55)",
+        },
+      ],
+    },
+    {
+      id: "og",
+      name: "Upper floor",
+      image: floorImages.og,
+      width: 545,
+      height: 725,
+      entities: [
+        { entity: "light.bedroom", x: 136, y: 166, size: 36, tap_action: { action: "toggle" } },
+        { entity: "binary_sensor.window_bathroom", x: 522, y: 88, size: 26 },
+      ],
+    },
+  ],
+};
+
+const preview = document.createElement("floorplan-card-next");
+document.getElementById("preview").appendChild(preview);
+
+const yamlEl = document.getElementById("yaml");
+
+const applyConfig = () => {
+  preview.setConfig(config);
+  preview.hass = hass;
+  const { type, ...rest } = config;
+  yamlEl.textContent = window.jsyaml.dump(rest, { noRefs: true, lineWidth: 100 });
+};
+
+const editor = await customElements.get("floorplan-card-next").getConfigElement();
+editor.hass = hass;
+editor.setConfig(config);
+editor.addEventListener("config-changed", (ev) => {
+  config = ev.detail.config;
+  applyConfig();
+});
+document.getElementById("editor").appendChild(editor);
+
+applyConfig();
+onUpdate((next) => {
+  preview.hass = next;
+  editor.hass = next;
+});
+</script>
+</body>
+</html>

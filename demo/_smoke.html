@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+</head>
+<body>
+<script src="./vendor/js-yaml.umd.min.js"></script>
+<script src="./mdi-icons.js"></script>
+<script src="./mock-ha.js"></script>
+<script type="module" src="../dist/floorplan-card.js"></script>
+<script type="module">
+const { hass, floorImages } = window.MockHA;
+const errors = [];
+window.addEventListener("error", (e) => errors.push(e.message));
+window.addEventListener("unhandledrejection", (e) => errors.push(String(e.reason)));
+
+const out = (k, v) => {
+  const el = document.createElement("div");
+  el.dataset.k = k;
+  el.textContent = String(v);
+  document.body.appendChild(el);
+};
+
+const config = {
+  type: "custom:floorplan-card-next",
+  floors: [
+    { id: "eg", name: "Ground floor", image: floorImages.eg, width: 545, height: 725, entities: [
+      { entity: "light.kitchen", x: 100, y: 100, size: 36, tap_action: { action: "toggle" } },
+      { entity: "sensor.temprature_kitchen", type: "text", x: 200, y: 300, size: 16 },
+      { x: 400, y: 100, size: 16, entries: [
+        { entity: "sensor.humidity_livingroom", background: "#35619f" },
+        { entity: "sensor.temprature_livingroom", background: "#8c1f1f" },
+      ]},
+      { entity: "light.dining", x: 300, y: 200, type: "icon", state: { on: "AN", off: "AUS" } },
+    ]},
+    { id: "og", name: "Upper floor", image: floorImages.og, width: 545, height: 725, entities: [
+      { entity: "light.bedroom", x: 50, y: 50 },
+    ]},
+  ],
+};
+
+const card = document.createElement("floorplan-card-next");
+card.setConfig(config);
+card.hass = hass;
+window.MockHA.onUpdate?.((next) => { card.hass = next; });
+document.body.appendChild(card);
+setTimeout(() => {
+  const shadow = card.shadowRoot;
+  out("card-shadow-len", shadow ? shadow.innerHTML.length : "NO-SHADOW");
+  out("card-entities", shadow?.querySelectorAll(".entity").length ?? "?");
+  out("card-floors-pills", shadow?.querySelectorAll(".pill").length ?? "?");
+  out("card-stage-aspect", shadow?.querySelector(".stage")?.getAttribute("style") ?? "?");
+  out("card-svg-image", !!shadow?.querySelector(".bg image"));
+  out("card-img-par", shadow?.querySelector(".bg image")?.getAttribute("preserveAspectRatio") ?? "none");
+  const pills = [...(shadow?.querySelectorAll(".text-pill") ?? [])].map(n => n.textContent);
+  out("card-text-pills", pills.join(" | "));
+  out("card-entity-tags", shadow?.querySelectorAll("floorplan-entity").length ?? "?");
+  const entityWraps = [...(shadow?.querySelectorAll(".entity") ?? [])];
+  out("card-entity-pos", entityWraps.map(el => {
+    const cs = getComputedStyle(el);
+    return `${el.style.top},${el.style.left}`;
+  }).join(" ; "));
+  const stageRect = shadow?.querySelector(".stage")?.getBoundingClientRect();
+  out("card-layout-pos", entityWraps.map(el => {
+    const r = el.getBoundingClientRect();
+    return stageRect
+      ? `${((r.top - stageRect.top) / stageRect.height * 100).toFixed(1)}%`
+      : "?";
+  }).join(" ; "));
+  out("card-stage-size", stageRect ? `${stageRect.width.toFixed(0)}x${stageRect.height.toFixed(0)}` : "?");
+  const entities = shadow?.querySelectorAll("floorplan-entity") ?? [];
+  const entityInfo = [...entities].map((el) => {
+    const es = el.shadowRoot;
+    const pill = es?.querySelector(".text-pill")?.textContent;
+    const icon = es?.querySelector("ha-state-icon")?.icon;
+    const cpt = es?.querySelector(".caption")?.textContent;
+    return `${el.getAttribute("class") || "?"}|${icon ?? "-"}|${pill ?? ""}|${cpt ?? ""}`;
+  });
+  out("card-entity-info", entityInfo.join(" ;; "));
+  const iconEl = [...entities].find((el) => el.config?.entity?.startsWith("light."));
+  const iconShadow = iconEl?.shadowRoot;
+  out("card-icon-chip", iconShadow?.querySelector(".icon-chip")?.getAttribute("style") ?? "none");
+  out("card-icon-color", iconShadow?.querySelector(".icon-wrap")?.getAttribute("style") ?? "css-default");
+  const compositeEl = [...entities].find((el) => el.config?.entries?.length);
+  const ces = compositeEl?.shadowRoot;
+  const cells = [...(ces?.querySelectorAll(".entry") ?? [])];
+  out("card-composite", cells.length
+    ? cells.map(c => {
+        const bg = c.style.background || "none";
+        return `${bg}:${c.textContent.trim()}`;
+      }).join(" | ")
+    : "none");
+
+  // left/right cell clicks must drill into the matching entity (more-info)
+  const moreInfo = [];
+  document.addEventListener("hass-more-info", (e) => moreInfo.push(e.detail?.entityId));
+  const cellsEls = [...(ces?.querySelectorAll(".entry") ?? [])];
+  cellsEls[0]?.click();
+  cellsEls[1]?.click();
+  out("card-composite-clicks", moreInfo.join(",") || "none");
+
+  // interaction: clicking light.kitchen should toggle it via the action engine.
+  const kitchen = [...entities].find((el) =>
+    el.config?.entity === "light.kitchen"
+  );
+  kitchen?.shadowRoot?.querySelector(".content")?.click();
+  setTimeout(() => {
+    out("card-toggle-result", hass.states["light.kitchen"].state);
+    const iconAfter = kitchen?.shadowRoot?.querySelector(".icon-wrap")?.getAttribute("style");
+    out("card-icon-color-on", iconAfter ?? "none");
+    // floor switch
+    const pillOG = [...(shadow?.querySelectorAll(".pill") ?? [])].find((p) => p.textContent.trim() === "Upper floor");
+    pillOG?.click();
+    setTimeout(() => {
+      out("card-after-floor-switch-entities", shadow?.querySelectorAll(".entity").length ?? "?");
+      const first = shadow?.querySelector("floorplan-entity");
+      out("card-after-floor-switch-entity", first?.config?.entity ?? "?");
+      out("errors", errors.join(" | ") || "none");
+    }, 150);
+  }, 150);
+
+  // editor
+  customElements.get("floorplan-card-next").getConfigElement().then((editor) => {
+    editor.hass = hass;
+    editor.setConfig(config);
+    document.body.appendChild(editor);
+    setTimeout(() => {
+      const eshadow = editor.shadowRoot;
+      out("editor-shadow-len", eshadow ? eshadow.innerHTML.length : "NO-SHADOW");
+      out("editor-handles", eshadow?.querySelectorAll(".fp-wrap").length ?? "?");
+      out("editor-tabs", eshadow?.querySelectorAll(".tab").length ?? "?");
+      const wraps = [...(eshadow?.querySelectorAll(".fp-wrap") ?? [])];
+      out("editor-entity-style", wraps.map(w => w.getAttribute("style")).join(" ; "));
+      const estageRect = eshadow?.querySelector(".stage")?.getBoundingClientRect();
+      out("editor-layout-pos", wraps.map(w => {
+        const r = w.getBoundingClientRect();
+        return estageRect ? `${((r.top - estageRect.top) / estageRect.height * 100).toFixed(1)}%` : "?";
+      }).join(" ; "));
+      out("editor-stage-size", estageRect ? `${estageRect.width.toFixed(0)}x${estageRect.height.toFixed(0)}` : "?");
+      // click-to-place at 50/50 on the stage
+      const emitted = [];
+      editor.addEventListener("config-changed", (ev) => emitted.push(ev.detail.config));
+      const stage = eshadow?.querySelector(".stage");
+      if (stage) {
+        const rect = stage.getBoundingClientRect();
+        const fire = (type) => stage.dispatchEvent(
+          new PointerEvent(type, { bubbles: true, composed: true, button: 0, pointerId: 7, clientX: rect.left + rect.width * 0.5, clientY: rect.top + rect.height * 0.5 })
+        );
+        fire("pointerdown");
+        fire("pointerup");
+      }
+      setTimeout(() => {
+        const last = emitted[emitted.length - 1];
+        out("editor-emitted", last ? `floors0.entities=${last.floors[0].entities.length}` : "no-event");
+        out("editor-new-entity", last ? `${last.floors[0].entities.at(-1).x},${last.floors[0].entities.at(-1).y},${last.floors[0].entities.at(-1).type}` : "?");
+        // HA echoes config back through setConfig — the open block must survive.
+        const blocks = [...(eshadow?.querySelectorAll(".block") ?? [])];
+        blocks[0]?.querySelector(".block-header")?.click();
+        setTimeout(() => {
+          const form = eshadow?.querySelector(".block.open ha-form");
+          form?.dispatchEvent(new CustomEvent("value-changed", {
+            detail: { value: { size: 44 }, isValid: true },
+            bubbles: true, composed: true,
+          }));
+          setTimeout(() => {
+            const latest = emitted[emitted.length - 1] ?? last;
+            if (latest) editor.setConfig(latest);
+            setTimeout(() => {
+              out("editor-open-after-echo", [...(eshadow?.querySelectorAll(".block.open") ?? [])].length);
+            }, 150);
+          }, 150);
+        }, 150);
+        out("errors", errors.join(" | ") || "none");
+      }, 250);
+    }, 400);
+  });
+
+  // templated image: {{ states(...) }} should resolve via render_template
+  hass.states["sensor.tpl_src"] = {
+    entity_id: "sensor.tpl_src",
+    state: window.MockHA.floorImages.eg,
+    attributes: {},
+    last_changed: new Date().toISOString(),
+  };
+  const tplCard = document.createElement("floorplan-card-next");
+  tplCard.setConfig({
+    type: "custom:floorplan-card-next",
+    floors: [{
+      id: "t",
+      name: "Tpl",
+      image: "{{ states('sensor.tpl_src') }}",
+      width: 545,
+      height: 725,
+      entities: [],
+    }],
+  });
+  tplCard.hass = hass;
+  document.body.appendChild(tplCard);
+  setTimeout(() => {
+    const href = tplCard.shadowRoot?.querySelector(".bg image")?.getAttribute("href") ?? "";
+    out("card-tpl-resolved", href === window.MockHA.floorImages.eg ? "yes" : "no");
+    out("card-tpl-still-template", href.includes("{{") ? "yes" : "no");
+    out("card-final-errors", errors.join(" | ") || "none");
+  }, 500);
+}, 400);
+</script>
+</body>
+</html>

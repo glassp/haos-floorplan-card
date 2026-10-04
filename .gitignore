@@ -1,0 +1,10 @@
+.DS_Store
+node_modules/
+*.log
+
+# personal house assets and configs, not part of the card
+floorplan/
+example.html
+example.yaml
+quicksetup.yaml
+demo/_quicksetup.html

@@ -1,0 +1,32 @@
+{
+  "name": "haor-floorplan-card",
+  "version": "0.1.0",
+  "description": "A native, multi-floor floorplan card for Home Assistant Lovelace with a drag-and-drop visual editor and image upload",
+  "license": "MIT",
+  "type": "module",
+  "keywords": [
+    "home-assistant",
+    "lovelace",
+    "lovelace-card",
+    "floorplan",
+    "hacs",
+    "custom-card"
+  ],
+  "scripts": {
+    "build": "node build.mjs",
+    "watch": "node build.mjs --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "lit": "^3.2.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "typescript": "^5.6.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/glassp/haor-floorplan-card.git"
+  },
+  "homepage": "https://github.com/glassp/haor-floorplan-card"
+}
