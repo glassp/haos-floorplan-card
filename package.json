@@ -1,5 +1,5 @@
 {
-  "name": "haor-floorplan-card",
+  "name": "haos-floorplan-card",
   "version": "0.1.0",
   "description": "A native, multi-floor floorplan card for Home Assistant Lovelace with a drag-and-drop visual editor and image upload",
   "license": "MIT",
@@ -26,7 +26,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/glassp/haor-floorplan-card.git"
+    "url": "git+https://github.com/glassp/haos-floorplan-card.git"
   },
-  "homepage": "https://github.com/glassp/haor-floorplan-card"
+  "homepage": "https://github.com/glassp/haos-floorplan-card"
 }

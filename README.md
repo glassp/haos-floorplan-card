@@ -87,7 +87,7 @@ image, and the card's YAML is generated live.
 ### HACS
 
 1. In HACS open **⋮ → Custom repositories**.
-2. Add `https://github.com/glassp/haor-floorplan-card` with category
+2. Add `https://github.com/glassp/haos-floorplan-card` with category
    **Dashboard**.
 3. Install **Floorplan Card** and reload the browser. HACS registers the
    resource automatically.

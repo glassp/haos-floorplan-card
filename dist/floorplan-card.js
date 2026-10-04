@@ -984,7 +984,7 @@ ${String(e)}`)}finally{this._uploading=!1}}_toImageCoords(t){let e=this.shadowRo
       color: var(--secondary-text-color);
       font-size: 0.85rem;
     }
-  `;customElements.get("floorplan-card-next")||customElements.define("floorplan-card-next",V);var ti="0.1.0";window.customCards=window.customCards??[];window.customCards.push({type:"floorplan-card-next",name:"Floorplan Card (Next)",description:"Multi-floor floorplan card with a drag-and-drop visual editor: upload a background image, place entities on it, wire actions \u2014 natives entity tracking, image caching and easy image swap-out built in.",preview:!1,documentationURL:"https://github.com/glassp/haor-floorplan-card"});console.info(`%c FLOORPLAN-CARD %c ${ti} `,"color:#fff;background:#4caf50","color:#4caf50;background:#fff");
+  `;customElements.get("floorplan-card-next")||customElements.define("floorplan-card-next",V);var ti="0.1.0";window.customCards=window.customCards??[];window.customCards.push({type:"floorplan-card-next",name:"Floorplan Card (Next)",description:"Multi-floor floorplan card with a drag-and-drop visual editor: upload a background image, place entities on it, wire actions \u2014 natives entity tracking, image caching and easy image swap-out built in.",preview:!1,documentationURL:"https://github.com/glassp/haos-floorplan-card"});console.info(`%c FLOORPLAN-CARD %c ${ti} `,"color:#fff;background:#4caf50","color:#4caf50;background:#fff");
 /*! Bundled license information:
 
 @lit/reactive-element/css-tag.js:
